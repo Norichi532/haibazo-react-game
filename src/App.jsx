@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 const BOARD_SIZE = 520;
@@ -7,8 +7,22 @@ const POINT_SIZE = 50;
 function App() {
   const [pointCount, setPointCount] = useState("");
   const [points, setPoints] = useState([]);
+  const [time, setTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const generatePoints = () => {
+  useEffect(() => {
+    let timerId;
+
+    if (isPlaying) {
+      timerId = setInterval(() => {
+        setTime((prev) => prev + 0.1);
+      }, 100);
+    }
+
+    return () => clearInterval(timerId);
+  }, [isPlaying]);
+
+  const startGame = () => {
     const total = Number(pointCount);
 
     if (!total || total <= 0) {
@@ -27,6 +41,8 @@ function App() {
     }
 
     setPoints(generated);
+    setTime(0);
+    setIsPlaying(true);
   };
 
   return (
@@ -42,19 +58,17 @@ function App() {
             min="1"
             value={pointCount}
             onChange={(e) => setPointCount(e.target.value)}
+            disabled={isPlaying}
           />
         </div>
 
         <div className="form-row">
           <label>Time:</label>
-          <span>0.0s</span>
+          <span>{time.toFixed(1)}s</span>
         </div>
 
-        <button
-          className="restart-btn"
-          onClick={generatePoints}
-        >
-          Start
+        <button className="restart-btn" onClick={startGame}>
+          {isPlaying ? "Restart" : "Start"}
         </button>
       </div>
 
