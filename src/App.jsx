@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 const BOARD_SIZE = 520;
 const POINT_SIZE = 50;
 const FADE_DURATION = 1000;
+const AUTO_DELAY = 1200;
 
 function App() {
   const [pointCount, setPointCount] = useState("");
@@ -12,6 +13,10 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [nextPoint, setNextPoint] = useState(1);
   const [gameStatus, setGameStatus] = useState("idle");
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+
+  const nextPointRef = useRef(1);
+  const autoTimeoutsRef = useRef([]);
 
   useEffect(() => {
     let timerId;
@@ -25,6 +30,11 @@ function App() {
     return () => clearInterval(timerId);
   }, [isPlaying]);
 
+  const clearAutoTimeouts = () => {
+    autoTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    autoTimeoutsRef.current = [];
+  };
+
   const startGame = () => {
     const total = Number(pointCount);
 
@@ -32,6 +42,8 @@ function App() {
       alert("Please enter a valid number");
       return;
     }
+
+    clearAutoTimeouts();
 
     const generated = [];
 
@@ -45,17 +57,22 @@ function App() {
       });
     }
 
+    nextPointRef.current = 1;
+
     setPoints(generated);
     setTime(0);
     setNextPoint(1);
     setGameStatus("playing");
     setIsPlaying(true);
+    setIsAutoPlaying(false);
   };
 
   const handlePointClick = (clickedId) => {
     if (!isPlaying) return;
 
-    if (clickedId !== nextPoint) {
+    if (clickedId !== nextPointRef.current) {
+      clearAutoTimeouts();
+      setIsAutoPlaying(false);
       setGameStatus("game-over");
       setIsPlaying(false);
       return;
@@ -64,42 +81,64 @@ function App() {
     setPoints((prev) =>
       prev.map((point) =>
         point.id === clickedId
-          ? { ...point, isClicked: true }
+          ? { ...point, isClicked: true, countdown: "1.0" }
           : point
       )
     );
 
     let currentCountdown = 1.0;
 
-  const countdownId = setInterval(() => {
-    currentCountdown -= 0.1;
+    const countdownId = setInterval(() => {
+      currentCountdown -= 0.1;
 
-    setPoints((prev) =>
-      prev.map((point) =>
-        point.id === clickedId
-          ? { ...point, countdown: Math.max(currentCountdown, 0).toFixed(1) }
-          : point
-      )
-    );
-  }, 100);
+      setPoints((prev) =>
+        prev.map((point) =>
+          point.id === clickedId
+            ? {
+                ...point,
+                countdown: Math.max(currentCountdown, 0).toFixed(1),
+              }
+            : point
+        )
+      );
+    }, 100);
 
-    setNextPoint((prev) => prev + 1);
+    nextPointRef.current += 1;
+    setNextPoint(nextPointRef.current);
 
     setTimeout(() => {
       clearInterval(countdownId);
+
       setPoints((prev) => {
-        const updatedPoints = prev.filter(
-          (point) => point.id !== clickedId
-        );
+        const updatedPoints = prev.filter((point) => point.id !== clickedId);
 
         if (updatedPoints.length === 0) {
+          clearAutoTimeouts();
           setGameStatus("all-cleared");
           setIsPlaying(false);
+          setIsAutoPlaying(false);
         }
 
         return updatedPoints;
       });
     }, FADE_DURATION);
+  };
+
+  const handleAutoPlay = () => {
+    if (!isPlaying || isAutoPlaying) return;
+
+    setIsAutoPlaying(true);
+
+    const total = Number(pointCount);
+    const start = nextPointRef.current;
+
+    for (let i = start; i <= total; i++) {
+      const timeoutId = setTimeout(() => {
+        handlePointClick(i);
+      }, (i - start) * AUTO_DELAY);
+
+      autoTimeoutsRef.current.push(timeoutId);
+    }
   };
 
   return (
@@ -138,8 +177,25 @@ function App() {
           <span>{time.toFixed(1)}s</span>
         </div>
 
-        <button className="restart-btn" onClick={startGame}>
+        <div className="form-row">
+          <label>Next:</label>
+          <span>{gameStatus === "playing" ? nextPoint : "-"}</span>
+        </div>
+
+        <button
+          className="restart-btn"
+          onClick={startGame}
+          disabled={isAutoPlaying}
+        >
           {gameStatus === "idle" ? "Start" : "Restart"}
+        </button>
+
+        <button
+          className="restart-btn"
+          onClick={handleAutoPlay}
+          disabled={!isPlaying || isAutoPlaying}
+        >
+          Auto Play
         </button>
       </div>
 
@@ -152,12 +208,17 @@ function App() {
               left: point.x,
               top: point.y,
             }}
-            onClick={() => handlePointClick(point.id)}
+            onClick={() => {
+              if (!isAutoPlaying) {
+                handlePointClick(point.id);
+              }
+            }}
           >
             <span>{point.id}</span>
+
             {point.isClicked && (
               <small className="countdown">{point.countdown}</small>
-              )}
+            )}
           </div>
         ))}
       </div>
