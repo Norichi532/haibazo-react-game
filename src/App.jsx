@@ -41,6 +41,7 @@ function App() {
         x: Math.random() * (BOARD_SIZE - POINT_SIZE),
         y: Math.random() * (BOARD_SIZE - POINT_SIZE),
         isClicked: false,
+        countdown: null,
       });
     }
 
@@ -68,9 +69,24 @@ function App() {
       )
     );
 
+    let currentCountdown = 1.0;
+
+  const countdownId = setInterval(() => {
+    currentCountdown -= 0.1;
+
+    setPoints((prev) =>
+      prev.map((point) =>
+        point.id === clickedId
+          ? { ...point, countdown: Math.max(currentCountdown, 0).toFixed(1) }
+          : point
+      )
+    );
+  }, 100);
+
     setNextPoint((prev) => prev + 1);
 
     setTimeout(() => {
+      clearInterval(countdownId);
       setPoints((prev) => {
         const updatedPoints = prev.filter(
           (point) => point.id !== clickedId
@@ -138,7 +154,10 @@ function App() {
             }}
             onClick={() => handlePointClick(point.id)}
           >
-            {point.id}
+            <span>{point.id}</span>
+            {point.isClicked && (
+              <small className="countdown">{point.countdown}</small>
+              )}
           </div>
         ))}
       </div>
