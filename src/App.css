@@ -176,3 +176,15 @@ body {
     max-width: 100%;
   }
 }
+.next-display {
+  width: 520px;
+  margin: 12px auto 0;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: #111;
+  background: #fff;
+  border: 3px solid #111;
+  border-radius: 12px;
+}

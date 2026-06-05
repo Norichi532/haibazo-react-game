@@ -3,8 +3,8 @@ import "./App.css";
 
 const BOARD_SIZE = 520;
 const POINT_SIZE = 50;
-const FADE_DURATION = 1000;
-const AUTO_DELAY = 1200;
+const FADE_DURATION = 1500;
+const AUTO_DELAY = 700;
 
 function App() {
   const [pointCount, setPointCount] = useState("");
@@ -111,8 +111,17 @@ function App() {
       );
     }, 100);
 
+    const total = Number(pointCount);
+    const isLastPoint = clickedId === total;
+
     nextPointRef.current += 1;
     setNextPoint(nextPointRef.current);
+
+    if (isLastPoint) {
+      setIsPlaying(false);
+      setIsAutoPlaying(false);
+      clearAutoTimeouts();
+    }
 
     setTimeout(() => {
       clearInterval(countdownId);
@@ -189,16 +198,6 @@ function App() {
           <label>Time:</label>
           <span>{time.toFixed(1)}s</span>
         </div>
-
-        <div className="form-row">
-          <label>Next:</label>
-          <span>
-            {gameStatus === "playing" && nextPoint <= Number(pointCount)
-              ? nextPoint
-              : "-"}
-          </span>
-        </div>
-
         <button className="restart-btn" onClick={startGame}>
           {gameStatus === "idle" ? "Start" : "Restart"}
         </button>
@@ -234,6 +233,12 @@ function App() {
             )}
           </div>
         ))}
+      </div>
+      <div className="next-display">
+        Next:{" "}
+        {gameStatus === "playing" && nextPoint <= Number(pointCount)
+          ? nextPoint
+          : "-"}
       </div>
     </div>
   );
