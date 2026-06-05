@@ -31,8 +31,16 @@ function App() {
   }, [isPlaying]);
 
   const clearAutoTimeouts = () => {
-    autoTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    autoTimeoutsRef.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+
     autoTimeoutsRef.current = [];
+  };
+
+  const stopAutoPlay = () => {
+    clearAutoTimeouts();
+    setIsAutoPlaying(false);
   };
 
   const startGame = () => {
@@ -125,7 +133,12 @@ function App() {
   };
 
   const handleAutoPlay = () => {
-    if (!isPlaying || isAutoPlaying) return;
+    if (!isPlaying) return;
+
+    if (isAutoPlaying) {
+      stopAutoPlay();
+      return;
+    }
 
     setIsAutoPlaying(true);
 
@@ -179,23 +192,23 @@ function App() {
 
         <div className="form-row">
           <label>Next:</label>
-          <span>{gameStatus === "playing" ? nextPoint : "-"}</span>
+          <span>
+            {gameStatus === "playing" && nextPoint <= Number(pointCount)
+              ? nextPoint
+              : "-"}
+          </span>
         </div>
 
-        <button
-          className="restart-btn"
-          onClick={startGame}
-          disabled={isAutoPlaying}
-        >
+        <button className="restart-btn" onClick={startGame}>
           {gameStatus === "idle" ? "Start" : "Restart"}
         </button>
 
         <button
           className="restart-btn"
           onClick={handleAutoPlay}
-          disabled={!isPlaying || isAutoPlaying}
+          disabled={!isPlaying}
         >
-          Auto Play
+          {isAutoPlaying ? "Stop Auto" : "Auto Play"}
         </button>
       </div>
 
