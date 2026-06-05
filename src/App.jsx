@@ -32,14 +32,6 @@ function App() {
 
     return () => clearInterval(timerId);
   }, [isPlaying]);
-
-  useEffect(() => {
-    return () => {
-      clearAutoTimeouts();
-      clearPointTimers();
-    };
-  }, []);
-
   const clearAutoTimeouts = () => {
     autoTimeoutsRef.current.forEach((timeoutId) => {
       clearTimeout(timeoutId);
