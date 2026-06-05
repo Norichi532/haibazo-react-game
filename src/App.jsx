@@ -17,6 +17,8 @@ function App() {
 
   const nextPointRef = useRef(1);
   const autoTimeoutsRef = useRef([]);
+  const fadeTimeoutsRef = useRef([]);
+  const countdownIntervalsRef = useRef([]);
 
   useEffect(() => {
     let timerId;
@@ -38,6 +40,19 @@ function App() {
     autoTimeoutsRef.current = [];
   };
 
+  const clearPointTimers = () => {
+  fadeTimeoutsRef.current.forEach((timeoutId) => {
+    clearTimeout(timeoutId);
+  });
+
+  countdownIntervalsRef.current.forEach((intervalId) => {
+    clearInterval(intervalId);
+  });
+
+  fadeTimeoutsRef.current = [];
+  countdownIntervalsRef.current = [];
+};
+
   const stopAutoPlay = () => {
     clearAutoTimeouts();
     setIsAutoPlaying(false);
@@ -52,6 +67,7 @@ function App() {
     }
 
     clearAutoTimeouts();
+    clearPointTimers();
 
     const generated = [];
 
@@ -78,14 +94,29 @@ function App() {
   const handlePointClick = (clickedId) => {
     if (!isPlaying) return;
 
-    if (clickedId !== nextPointRef.current) {
+    const isCorrectPoint = clickedId === nextPointRef.current;
+
+    
+    if (!isCorrectPoint) {
       clearAutoTimeouts();
+      clearPointTimers();
+
+      setPoints((prev) =>
+        prev.map((point) =>
+          point.id === clickedId
+            ? { ...point, isClicked: true, countdown: null }
+            : point
+        )
+      );
+
       setIsAutoPlaying(false);
       setGameStatus("game-over");
       setIsPlaying(false);
+
       return;
     }
 
+    // Nếu bấm đúng: chuyển đỏ, countdown, rồi biến mất sau FADE_DURATION
     setPoints((prev) =>
       prev.map((point) =>
         point.id === clickedId
@@ -111,6 +142,8 @@ function App() {
       );
     }, 100);
 
+    countdownIntervalsRef.current.push(countdownId);
+
     const total = Number(pointCount);
     const isLastPoint = clickedId === total;
 
@@ -123,7 +156,7 @@ function App() {
       clearAutoTimeouts();
     }
 
-    setTimeout(() => {
+    const fadeTimeoutId = setTimeout(() => {
       clearInterval(countdownId);
 
       setPoints((prev) => {
@@ -131,6 +164,7 @@ function App() {
 
         if (updatedPoints.length === 0) {
           clearAutoTimeouts();
+          clearPointTimers();
           setGameStatus("all-cleared");
           setIsPlaying(false);
           setIsAutoPlaying(false);
@@ -139,6 +173,8 @@ function App() {
         return updatedPoints;
       });
     }, FADE_DURATION);
+
+    fadeTimeoutsRef.current.push(fadeTimeoutId);
   };
 
   const handleAutoPlay = () => {
@@ -211,7 +247,7 @@ function App() {
         </button>
       </div>
 
-      <div className="game-board">
+      <div className={`game-board ${gameStatus === "game-over" ? "game-board-over" : ""}`}>
         {points.map((point) => (
           <div
             key={point.id}
