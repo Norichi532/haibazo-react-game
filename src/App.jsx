@@ -3,6 +3,7 @@ import "./App.css";
 
 const BOARD_SIZE = 520;
 const POINT_SIZE = 50;
+const FADE_DURATION = 1000;
 
 function App() {
   const [pointCount, setPointCount] = useState("");
@@ -39,6 +40,7 @@ function App() {
         id: i,
         x: Math.random() * (BOARD_SIZE - POINT_SIZE),
         y: Math.random() * (BOARD_SIZE - POINT_SIZE),
+        isClicked: false,
       });
     }
 
@@ -50,36 +52,57 @@ function App() {
   };
 
   const handlePointClick = (clickedId) => {
-  if (!isPlaying) return;
+    if (!isPlaying) return;
 
-  if (clickedId !== nextPoint) {
-    setGameStatus("game-over");
-    setIsPlaying(false);
-    return;
-  }
+    if (clickedId !== nextPoint) {
+      setGameStatus("game-over");
+      setIsPlaying(false);
+      return;
+    }
 
-  setPoints((prev) =>
-    prev.filter((point) => point.id !== clickedId)
-  );
+    setPoints((prev) =>
+      prev.map((point) =>
+        point.id === clickedId
+          ? { ...point, isClicked: true }
+          : point
+      )
+    );
 
-  setNextPoint((prev) => prev + 1);
-};
+    setNextPoint((prev) => prev + 1);
+
+    setTimeout(() => {
+      setPoints((prev) => {
+        const updatedPoints = prev.filter(
+          (point) => point.id !== clickedId
+        );
+
+        if (updatedPoints.length === 0) {
+          setGameStatus("all-cleared");
+          setIsPlaying(false);
+        }
+
+        return updatedPoints;
+      });
+    }, FADE_DURATION);
+  };
 
   return (
     <div className="app">
-      <h1 className="title">LET'S PLAY</h1>
-
-      {gameStatus === "game-over" && (
-        <h2 style={{ color: "red" }}>
-          GAME OVER
-        </h2>
-      )}
-
-      {gameStatus === "playing" && (
-        <h2>
-          Next: {nextPoint}
-        </h2>
-      )}
+      <h1
+        className={
+          gameStatus === "game-over"
+            ? "title game-over-text"
+            : gameStatus === "all-cleared"
+            ? "title cleared-text"
+            : "title"
+        }
+      >
+        {gameStatus === "game-over"
+          ? "GAME OVER"
+          : gameStatus === "all-cleared"
+          ? "ALL CLEARED"
+          : "LET'S PLAY"}
+      </h1>
 
       <div className="control-panel">
         <div className="form-row">
@@ -100,7 +123,7 @@ function App() {
         </div>
 
         <button className="restart-btn" onClick={startGame}>
-          {isPlaying ? "Restart" : "Start"}
+          {gameStatus === "idle" ? "Start" : "Restart"}
         </button>
       </div>
 
@@ -108,12 +131,12 @@ function App() {
         {points.map((point) => (
           <div
             key={point.id}
-            className="point"
-            onClick={() => handlePointClick(point.id)}
+            className={`point ${point.isClicked ? "point-clicked" : ""}`}
             style={{
               left: point.x,
               top: point.y,
             }}
+            onClick={() => handlePointClick(point.id)}
           >
             {point.id}
           </div>
