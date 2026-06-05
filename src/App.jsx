@@ -9,6 +9,8 @@ function App() {
   const [points, setPoints] = useState([]);
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [nextPoint, setNextPoint] = useState(1);
+  const [gameStatus, setGameStatus] = useState("idle");
 
   useEffect(() => {
     let timerId;
@@ -42,12 +44,42 @@ function App() {
 
     setPoints(generated);
     setTime(0);
+    setNextPoint(1);
+    setGameStatus("playing");
     setIsPlaying(true);
   };
+
+  const handlePointClick = (clickedId) => {
+  if (!isPlaying) return;
+
+  if (clickedId !== nextPoint) {
+    setGameStatus("game-over");
+    setIsPlaying(false);
+    return;
+  }
+
+  setPoints((prev) =>
+    prev.filter((point) => point.id !== clickedId)
+  );
+
+  setNextPoint((prev) => prev + 1);
+};
 
   return (
     <div className="app">
       <h1 className="title">LET'S PLAY</h1>
+
+      {gameStatus === "game-over" && (
+        <h2 style={{ color: "red" }}>
+          GAME OVER
+        </h2>
+      )}
+
+      {gameStatus === "playing" && (
+        <h2>
+          Next: {nextPoint}
+        </h2>
+      )}
 
       <div className="control-panel">
         <div className="form-row">
@@ -77,6 +109,7 @@ function App() {
           <div
             key={point.id}
             className="point"
+            onClick={() => handlePointClick(point.id)}
             style={{
               left: point.x,
               top: point.y,
